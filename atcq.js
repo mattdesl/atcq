@@ -89,7 +89,7 @@ function ATCQ (opt = {}) {
     restart,
     clear,
     finish,
-    quantize,
+    quantizeSync,
     quantizeAsync,
     getPalette,
     getWeightedPalette,
@@ -108,7 +108,7 @@ function ATCQ (opt = {}) {
     return 1 - countAntsMoving() / ants.length;
   }
 
-  function quantize () {
+  function quantizeSync () {
     while (!finished) {
       stepOnce();
     }
