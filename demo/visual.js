@@ -8,7 +8,6 @@ const colorSpace = require('color-space')
 const { lab2rgb, rgb2lab } = require('./util/lab');
 const cie94 = require('./util/cie94');
 const cie2000 = require('./util/cie2000');
-const imageQ = require
 
 const settings = {
   dimensions: [ 2048, 2048 ]

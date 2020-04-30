@@ -22,7 +22,9 @@ console.log(palette);
 
 Here `pixels` can be a flat RGBA array, an array of `[ r, g, b ]` pixels, or an ImageData object.
 
-Or, an async example, that uses an inveral to reduce blocking the thread:
+## Async Example
+
+Or, an async example, that uses an interval to reduce blocking the thread:
 
 ```js
 const ATCQ = require('atcq');
@@ -40,6 +42,8 @@ const ATCQ = require('atcq');
 // array of 32 quantized RGB colors
 console.log(palette);
 ```
+
+## Weighted Palettes
 
 A more advanced example, producing a weighted palette and a further reduced 'disparate' palette.
 
