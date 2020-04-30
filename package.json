@@ -1,0 +1,44 @@
+{
+  "name": "atcq",
+  "version": "1.0.0",
+  "description": "An implementation of Ant-Tree Color Quantization",
+  "main": "./atcq.js",
+  "license": "MIT",
+  "author": {
+    "name": "Matt DesLauriers",
+    "email": "dave.des@gmail.com",
+    "url": "https://github.com/mattdesl"
+  },
+  "dependencies": {
+    "disjoint-set": "^1.1.8"
+  },
+  "devDependencies": {
+    "canvas-sketch": "^0.7.3",
+    "canvas-sketch-cli": "^1.11.7",
+    "canvas-sketch-util": "^1.10.0",
+    "color-space": "^1.16.0",
+    "get-image-pixels": "^1.0.1",
+    "get-pixels": "^3.3.2",
+    "image-q": "^2.1.2",
+    "load-asset": "^1.2.0"
+  },
+  "scripts": {},
+  "keywords": [
+    "color",
+    "quantization",
+    "palette",
+    "image",
+    "pixels",
+    "rgba",
+    "gif",
+    "quantize"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mattdesl/atcq.git"
+  },
+  "homepage": "https://github.com/mattdesl/atcq",
+  "bugs": {
+    "url": "https://github.com/mattdesl/atcq/issues"
+  }
+}
