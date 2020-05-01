@@ -10,16 +10,18 @@ const cie94 = require('./util/cie94');
 const cie2000 = require('./util/cie2000');
 
 const settings = {
-  dimensions: [ 2048, 2048 ]
+  dimensions: [ 1024, 720 ]
 };
 
-const sketch = async ({ render, update }) => {
+const sketch = async ({ render, update, height }) => {
   const maxColors = 32;
   const targetColors = 6;
   const useLab = true;
-  const distanceFunc = useLab ? cie94.textiles : undefined;
-  const paletteSize = 20;
-  const paletteTypes = [
+  const distanceFunc = useLab ? cie2000 : undefined;
+  const paletteOnly = true;
+  const paletteSize = height;
+  const mainPalette = maxColors;
+  const paletteTypes = paletteOnly ? [ mainPalette ] : [
     maxColors,
     targetColors
   ];
@@ -38,12 +40,14 @@ const sketch = async ({ render, update }) => {
 
   async function quantize (src) {
     image = await load(src);
-    update({
-      dimensions: [
-        image.width,
-        image.height + paletteTypes.length * paletteSize
-      ]
-    });
+    if (!paletteOnly) {
+      update({
+        dimensions: [
+          image.width,
+          image.height + paletteTypes.length * paletteSize
+        ]
+      });
+    }
     render(); // after image is loaded, draw it
 
     atcq.clear();
@@ -67,7 +71,7 @@ const sketch = async ({ render, update }) => {
     context.fillStyle = 'white';
     context.fillRect(0, 0, width, height);
 
-    if (image) context.drawImage(image, 0, 0, image.width, image.height);
+    if (image && !paletteOnly) context.drawImage(image, 0, 0, image.width, image.height);
 
     paletteTypes.map(t => atcq.getWeightedPalette(t)).forEach((c, i) => {
       if (c && c.length > 0) {

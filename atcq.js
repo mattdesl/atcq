@@ -13,7 +13,7 @@ module.exports.quantizeSync = quantizeSync;
 function quantizeSync (pixels, opt = {}) {
   const atcq = ATCQ(opt);
   atcq.addData(pixels);
-  atcq.quantize();
+  atcq.quantizeSync();
   return atcq.getPalette();
 }
 
