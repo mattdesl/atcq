@@ -1,6 +1,6 @@
 {
   "name": "atcq",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "An implementation of Ant-Tree Color Quantization",
   "main": "./atcq.js",
   "license": "MIT",
