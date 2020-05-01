@@ -6,37 +6,53 @@ const ATCQ = require('../');
 const { getDisjointedSubsets } = require('../lib/mst');
 const colorSpace = require('color-space')
 const { lab2rgb, rgb2lab } = require('./util/lab');
+const ImageQ = require('image-q');
 const cie94 = require('./util/cie94');
 const cie2000 = require('./util/cie2000');
 
 const settings = {
-  dimensions: [ 1024, 720 ]
+  dimensions: [ 256, 100 ]
 };
 
 const sketch = async ({ render, update, height }) => {
-  const maxColors = 32;
+  const maxColors = 16;
   const targetColors = 6;
   const useLab = true;
-  const distanceFunc = useLab ? cie2000 : undefined;
+  const sortResult = false;
+  const adaptive = true;
+  const atcqDistFuncs = {
+    euclidean: undefined,
+    'cie94-textiles': cie94.textiles,
+    'ciede2000': cie2000
+  };
+
+  const colorDistanceFormula = 'ciede2000';
+  const distanceFunc = useLab ? atcqDistFuncs[colorDistanceFormula] : undefined;
   const paletteOnly = true;
   const paletteSize = height;
-  const mainPalette = maxColors;
+  const mainPalette = targetColors;
+  const mode = 'atcq';
+  // used by image-q
+  const paletteQuantization = 'wuquant';
+
   const paletteTypes = paletteOnly ? [ mainPalette ] : [
     maxColors,
     targetColors
   ];
 
+  const alpha = 0.75;
+  const disconnects = true;
   let atcq = ATCQ({
     maxColors,
-    disconnects: true,
+    disconnects,
     distance: distanceFunc,
     // windowSize: 1024 * 10,
     // nodeChildLimit: 2,
     step() { render(); },
-    errorSigma: 0.25
+    alpha
   });
 
-  let image, palette, simplePalette, simpleTargetPalette0, simpleTargetPalette1;
+  let image, palette;
 
   async function quantize (src) {
     image = await load(src);
@@ -48,18 +64,49 @@ const sketch = async ({ render, update, height }) => {
         ]
       });
     }
-    render(); // after image is loaded, draw it
 
     atcq.clear();
 
     let rgba = getPixels(image);
-    let inputData = useLab ? convertRGBAToLab(rgba) : rgba;
-    atcq.addData(inputData);
-    render();
-    console.log('Quantizing...');
-    await atcq.quantizeAsync();
-    console.log('Done');
-    render();
+
+    if (mode === 'atcq') {
+      let inputData = useLab ? convertRGBAToLab(rgba) : rgba;
+      atcq.addData(inputData);
+      update({
+        suffix: [
+          'atcq',
+          useLab ? 'lab' : 'rgb',
+          useLab ? colorDistanceFormula : 'euclidean',
+          `a${alpha}`,
+          disconnects ? 'disconnects' : 'no-disconnects',
+          `max${maxColors}`,
+          `q${mainPalette}`
+        ].join('-')
+      })
+      render();
+      console.log('Quantizing...');
+      await atcq.quantizeAsync();
+      console.log('Done');
+      render();
+    } else {
+      const pc = ImageQ.utils.PointContainer.fromUint8Array(rgba, image.width, image.height);
+      console.log('Quantizing...');
+      const p = await ImageQ.buildPalette([pc], {
+        // colorDistanceFormula,
+        paletteQuantization,
+        colors: mainPalette
+      });
+      palette = p.getPointContainer().getPointArray().map(p => ([ p.r, p.g, p.b ]));
+      console.log('Done');
+      update({
+        suffix: [
+          paletteQuantization,
+          colorDistanceFormula,
+          `q${mainPalette}`
+        ].join('-')
+      })
+      render();
+    }
   }
 
   const f = 'baboon.png';
@@ -73,15 +120,30 @@ const sketch = async ({ render, update, height }) => {
 
     if (image && !paletteOnly) context.drawImage(image, 0, 0, image.width, image.height);
 
-    paletteTypes.map(t => atcq.getWeightedPalette(t)).forEach((c, i) => {
-      if (c && c.length > 0) {
+    if (mode === 'atcq') {
+      paletteTypes.map(t => atcq.getWeightedPalette(t)).forEach((c, i) => {
+        if (c && c.length > 0) {
+          drawPalette(c, {
+            ...props,
+            adaptive,
+            y: height - paletteTypes.length * paletteSize + i * paletteSize,
+            height: paletteSize
+          });
+        }
+      });
+    } else {
+      if (palette) {
+        const c = palette.map(p => {
+          return { weight: 1 / palette.length, color: p };
+        });
         drawPalette(c, {
           ...props,
-          y: height - paletteTypes.length * paletteSize + i * paletteSize,
+          adaptive,
+          y: height - paletteSize,
           height: paletteSize
         });
       }
-    });
+    }
   };
 
   // function getDisjointedClusters () {
@@ -112,14 +174,31 @@ const sketch = async ({ render, update, height }) => {
 
   function drawPalette (palette, props) {
     const { width, height, context, adaptive = true } = props;
-
+    
     if (palette.length <= 0) return;
+    palette = palette.slice();
+    if (useLab && mode === 'atcq') {
+      palette = palette.map(p => {
+        return {
+          ...p,
+          color: lab2rgb(p.color)
+        };
+      });
+    }
+    if (sortResult) {
+      palette.sort((ca, cb) => {
+        const a = ca.color;
+        const b = cb.color;
+        const len0 = a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
+        const len1 = b[0] * b[0] + b[1] * b[1] + b[2] * b[2];
+        return len1 - len0;
+      });
+    }
 
     let { x = 0, y = 0 } = props;
 
     palette.forEach((cluster, i, list) => {
-      const xyzData = cluster.color;
-      const rgb = useLab ? lab2rgb(xyzData) : xyzData;
+      const rgb = cluster.color;
       let w = adaptive
         ? Math.round(cluster.weight * width)
         : Math.round(1 / palette.length * width);

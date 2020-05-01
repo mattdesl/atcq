@@ -47,7 +47,7 @@ function ATCQ (opt = {}) {
   const nodeChildLimit = opt.nodeChildLimit != null ? opt.nodeChildLimit : maxColors;
   const distanceFunc = opt.distance || util.distanceSquared;
   const disconnects = Boolean(opt.disconnects);
-  const errorSigma = opt.errorSigma != null ? opt.errorSigma : 0.25;
+  const alpha = opt.alpha != null ? opt.alpha : 0.25;
   const minDistance = opt.minDistance != null && isFinite(opt.minDistance) ? opt.minDistance : -Infinity;
 
   const processed = opt.processed || (() => {});
@@ -279,7 +279,7 @@ function ATCQ (opt = {}) {
     if (createCluster) {
       // No clusters yet in tree
       // Create a new cluster
-      const cluster = new ClusterNode(errorSigma, dimensions);
+      const cluster = new ClusterNode(alpha, dimensions);
       // add the cluster to the tree
       rootNode.add(cluster);
       // place the ant on the cluster
