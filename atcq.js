@@ -44,11 +44,12 @@ module.exports.findCluster = util.findCluster;
 
 function ATCQ (opt = {}) {
   const maxColors = opt.maxColors != null ? opt.maxColors : 32;
-  const nodeChildLimit = opt.nodeChildLimit != null ? opt.nodeChildLimit : maxColors;
+  const nodeChildLimit = opt.nodeChildLimit != null ? opt.nodeChildLimit : Math.max(2, maxColors);
   const distanceFunc = opt.distance || util.distanceSquared;
   const disconnects = Boolean(opt.disconnects);
   const alpha = opt.alpha != null ? opt.alpha : 0.25;
   const minDistance = opt.minDistance != null && isFinite(opt.minDistance) ? opt.minDistance : -Infinity;
+  const random = opt.random != null ? opt.random : (() => Math.random());
 
   const processed = opt.processed || (() => {});
   const progress = opt.progress || (() => {});
@@ -57,6 +58,9 @@ function ATCQ (opt = {}) {
   const dimensions = opt.dimensions != null ? opt.dimensions : 3;
   const progressInterval = opt.progressInterval != null ? opt.progressInterval : 0.2;
   const windowSize = opt.windowSize || null;
+
+  if (nodeChildLimit < 2) throw new Error('Invalid child limit: must be >= 2');
+  if (maxColors < 1) throw new Error('Invalid max colors, must be > 0');
 
   const rootNode = new SupportNode();
   const ants = [];
@@ -315,10 +319,10 @@ function ATCQ (opt = {}) {
         return;
       }
 
-      const a0 = children[Math.floor(Math.random() * children.length)];
+      const a0 = children[Math.floor(random() * children.length)];
       const T = cluster.relativeError;
       const dist = distanceFunc(ant.color, a0.color);
-      if (dist < T && children.length < nodeChildLimit) {
+      if (dist <= T && children.length < nodeChildLimit) {
         ant.place(otherNode);
         otherNode.add(ant);
       } else {

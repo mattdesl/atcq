@@ -72,16 +72,15 @@ const ATCQ = require('atcq');
     // Max number of pixels to process in a single step
     windowSize: 1024 * 50
   });
+
+  // array of 32 quantized RGB colors
+  console.log(palette);
 })();
-
-
-// array of 32 quantized RGB colors
-console.log(palette);
 ```
 
 ## Weighted Palettes
 
-A more advanced example, producing a weighted palette and a further reduced 'disparate' palette.
+A more advanced example, producing a weighted and sorted palette, plus a further reduced 'disparate' palette.
 
 ```js
 const actq = ATCQ({
