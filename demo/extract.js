@@ -16,7 +16,8 @@ if (!file) throw new Error('Must supply filename; e.g. node extract image.png');
   const targetColors = 5;
   const atcq = ATCQ({
     maxColors,
-    disconnects: true,
+    disconnects: false,
+    maxIterations: 5,
     progress (t) {
       console.log(`Progress: ${Math.floor(t * 100)}%`);
     }

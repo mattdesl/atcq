@@ -15,7 +15,7 @@ const settings = {
 };
 
 const sketch = async ({ render, update, height }) => {
-  const maxColors = 16;
+  const maxColors = 6;
   const targetColors = 6;
   const useLab = true;
   const sortResult = false;
@@ -40,14 +40,16 @@ const sketch = async ({ render, update, height }) => {
     targetColors
   ];
 
-  const alpha = 0.75;
-  const disconnects = true;
+  const alpha = 0.9;
+  const disconnects = false;
   let atcq = ATCQ({
     maxColors,
     disconnects,
+    maxIterations: 100,
     distance: distanceFunc,
     // windowSize: 1024 * 10,
     // nodeChildLimit: 2,
+    progress (p) { console.log(Math.floor(p * 100)); },
     step() { render(); },
     alpha
   });

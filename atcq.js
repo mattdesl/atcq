@@ -50,6 +50,7 @@ function ATCQ (opt = {}) {
   const alpha = opt.alpha != null ? opt.alpha : 0.25;
   const minDistance = opt.minDistance != null && isFinite(opt.minDistance) ? opt.minDistance : -Infinity;
   const random = opt.random != null ? opt.random : (() => Math.random());
+  const maxIterations = opt.maxIterations != null && isFinite(opt.maxIterations) ? opt.maxIterations : 1;
 
   const processed = opt.processed || (() => {});
   const progress = opt.progress || (() => {});
@@ -59,6 +60,7 @@ function ATCQ (opt = {}) {
   const progressInterval = opt.progressInterval != null ? opt.progressInterval : 0.2;
   const windowSize = opt.windowSize || null;
 
+  if (maxIterations < 1) throw new Error('maxIterations must be > 0');
   if (nodeChildLimit < 2) throw new Error('Invalid child limit: must be >= 2');
   if (maxColors < 1) throw new Error('Invalid max colors, must be > 0');
 
@@ -69,6 +71,7 @@ function ATCQ (opt = {}) {
   let finished = false;
   let lastProgress = 0;
   let antIndex = 0;
+  let iterations = 0;
 
   return {
     get ants () {
@@ -109,7 +112,7 @@ function ATCQ (opt = {}) {
   }
 
   function countProgress () {
-    return 1 - countAntsMoving() / ants.length;
+    return _computeProgress(countAntsMoving());
   }
 
   function quantizeSync () {
@@ -144,6 +147,15 @@ function ATCQ (opt = {}) {
     started = false;
     util.detachTree(rootNode);
     finished = false;
+  }
+
+  function nextIteration () {
+    ants.forEach(ant => {
+      ant.disconnect();
+      ant.lift();
+      // mark as not-yet-disconnected
+      ant.hasDisconnected = false;
+    });
   }
 
   function addData (obj) {
@@ -246,11 +258,21 @@ function ATCQ (opt = {}) {
     step();
 
     const remaining = countAntsMoving();
+    const newProgress = _computeProgress(remaining);
+    let reportProgress = true;
+
     if (remaining <= 0) {
-      finish();
-      progress(1);
-    } else {
-      const newProgress = 1 - remaining / ants.length;
+      iterations++;
+      if (iterations < maxIterations) {
+        nextIteration();
+      } else {
+        reportProgress = false;
+        finish();
+        progress(1);
+      }
+    }
+    
+    if (reportProgress) {
       if (Math.abs(newProgress - lastProgress) >= progressInterval) {
         lastProgress = newProgress;
         progress(newProgress);
@@ -322,6 +344,10 @@ function ATCQ (opt = {}) {
       const a0 = children[Math.floor(random() * children.length)];
       const T = cluster.relativeError;
       const dist = distanceFunc(ant.color, a0.color);
+
+      // Note: We diverge from the original ATCQ algorithm here
+      // to better support images with, for example, all black pixels
+      // where the distance === T.
       if (dist <= T && children.length < nodeChildLimit) {
         ant.place(otherNode);
         otherNode.add(ant);
@@ -388,5 +414,9 @@ function ATCQ (opt = {}) {
   function getPalette (n) {
     const clusters = getWeightedPalette(n);
     return clusters.map(n => n.color);
+  }
+
+  function _computeProgress (nLenMoving) {
+    return (1 - nLenMoving / ants.length) * (1 / maxIterations) + iterations / maxIterations;
   }
 }

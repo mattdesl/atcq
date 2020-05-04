@@ -21,9 +21,8 @@ const path = require('path');
   const maxColors = 4;
   const atcq = ATCQ({
     maxColors,
-    nodeChildLimit: 2,
     alpha: 0.95,
-    disconnects: true,
+    maxIterations: 7,
     progress (t) {
       console.log(`Progress: ${Math.floor(t * 100)}%`);
     }
