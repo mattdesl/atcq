@@ -9,26 +9,36 @@ const { lab2rgb, rgb2lab } = require('./util/lab');
 const ImageQ = require('image-q');
 const cie94 = require('./util/cie94');
 const cie2000 = require('./util/cie2000');
+const Palette = ImageQ.utils.Palette;
+const Point = ImageQ.utils.Point;
 
 const settings = {
   dimensions: [ 256, 100 ]
 };
 
 const sketch = async ({ render, update, height }) => {
-  const maxColors = 6;
-  const targetColors = 6;
+  const maxColors = 16;
+  const targetColors = 16;
   const useLab = true;
   const sortResult = false;
   const adaptive = true;
   const atcqDistFuncs = {
     euclidean: undefined,
     'cie94-textiles': cie94.textiles,
-    'ciede2000': cie2000
+    'ciede2000': cie2000,
+    'HyAB': (c0, c1) => {
+      const [ L0, a0, b0 ] = c0;
+      const [ L1, a1, b1 ] = c1;
+      const dL = Math.abs(L0 - L1);
+      const da = a0 - a1;
+      const db = b0 - b1;
+      return dL + Math.sqrt(da * da + db * db);
+    }
   };
 
   const colorDistanceFormula = 'ciede2000';
   const distanceFunc = useLab ? atcqDistFuncs[colorDistanceFormula] : undefined;
-  const paletteOnly = true;
+  const paletteOnly = false;
   const paletteSize = height;
   const mainPalette = targetColors;
   const mode = 'atcq';
@@ -36,16 +46,16 @@ const sketch = async ({ render, update, height }) => {
   const paletteQuantization = 'wuquant';
 
   const paletteTypes = paletteOnly ? [ mainPalette ] : [
-    maxColors,
+    // maxColors,
     targetColors
   ];
 
-  const alpha = 0.9;
+  const alpha = 0.85;
   const disconnects = false;
   let atcq = ATCQ({
     maxColors,
     disconnects,
-    maxIterations: 100,
+    maxIterations: 7,
     distance: distanceFunc,
     // windowSize: 1024 * 10,
     // nodeChildLimit: 2,
@@ -55,6 +65,7 @@ const sketch = async ({ render, update, height }) => {
   });
 
   let image, palette;
+  let outImage;
 
   async function quantize (src) {
     image = await load(src);
@@ -88,7 +99,52 @@ const sketch = async ({ render, update, height }) => {
       render();
       console.log('Quantizing...');
       await atcq.quantizeAsync();
-      console.log('Done');
+
+      const imagePointContainer = ImageQ.utils.PointContainer.fromUint8Array(rgba, image.width, image.height);
+      const palette = new Palette();
+      atcq.getWeightedPalette(targetColors).forEach(p => {
+        const [r, g, b] = lab2rgb(p.color);
+        const a = 255;
+        const color = Point.createByRGBA(r | 0, g | 0, b | 0, a | 0);
+        palette.add(color);
+      })
+      palette.sort();
+
+      const distanceCalculator = new ImageQ.distance.Euclidean();
+      distanceCalculator.calculateRaw = (
+          r1,
+          g1,
+          b1,
+          a1,
+          r2,
+          g2,
+          b2,
+          a2,
+      ) => {
+        const rgb1 = [ r1, g1, b1 ];
+        const rgb2 = [ r2, g2, b2 ];
+        return distanceFunc(
+          rgb2lab(rgb1),
+          rgb2lab(rgb2)
+        );
+      }
+      const imageQuantizer = new ImageQ.image.NearestColor(distanceCalculator);
+      const outContainer = imageQuantizer.quantizeSync(imagePointContainer, palette);
+      outImage = document.createElement('canvas');
+      const outCtx = outImage.getContext('2d');
+      outImage.width = outContainer.getWidth();
+      outImage.height = outContainer.getHeight();
+      const imgData = outCtx.createImageData(outContainer.getWidth(), outContainer.getHeight());
+      const points = outContainer.getPointArray();
+      for (let i = 0, c = 0; i < imgData.width * imgData.height; i++) {
+        const p = points[c++];
+        imgData.data[i * 4 + 0] = p.r;
+        imgData.data[i * 4 + 1] = p.g;
+        imgData.data[i * 4 + 2] = p.b;
+        imgData.data[i * 4 + 3] = p.a;
+      }
+      outCtx.putImageData(imgData, 0, 0);
+      console.log('Done', outContainer);
       render();
     } else {
       const pc = ImageQ.utils.PointContainer.fromUint8Array(rgba, image.width, image.height);
@@ -121,6 +177,7 @@ const sketch = async ({ render, update, height }) => {
     context.fillRect(0, 0, width, height);
 
     if (image && !paletteOnly) context.drawImage(image, 0, 0, image.width, image.height);
+    if (outImage && !paletteOnly) context.drawImage(outImage, 0, 0, image.width, image.height);
 
     if (mode === 'atcq') {
       paletteTypes.map(t => atcq.getWeightedPalette(t)).forEach((c, i) => {

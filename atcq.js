@@ -366,7 +366,6 @@ function ATCQ (opt = {}) {
       return clusters;
     }
 
-
     const {
       maxIterations = Infinity,
     } = opt;
