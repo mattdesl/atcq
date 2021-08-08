@@ -141,19 +141,19 @@ I'm not sure if there is a better and more optimal approach here (feel free to o
 Taking the baboon image and comparing it to various algorithms in the `image-q` module. The weighting and sorting is normalized for easier comparisons.
 
 ![palette](./images/2020.05.01-11.46.21-atcq-lab-ciede2000-s0.75-disconnects-max64-q6.png)  
-<sup>*ATCQ, CIEDE200, α0.75, with disconnects, max 64 colors, target 6 colors*</sup>
+<sup>*ATCQ, CIEDE2000, α0.75, with disconnects, max 64 colors, target 6 colors*</sup>
 
 ![palette](./images/2020.05.01-11.45.23-atcq-lab-ciede2000-s0.2-disconnects-max64-q6.png)  
-<sup>*ATCQ, CIEDE200, α0.2, with disconnects, max 64 colors, target 6 colors*</sup>
+<sup>*ATCQ, CIEDE2000, α0.2, with disconnects, max 64 colors, target 6 colors*</sup>
 
 ![palette](./images/2020.05.01-11.45.00-wuquant-ciede2000-q6.png)  
-<sup>*WuQuant, CIEDE200, max 6 colors*</sup>
+<sup>*WuQuant, CIEDE2000, max 6 colors*</sup>
 
 ![palette](./images/2020.05.01-11.44.52-rgbquant-ciede2000-q6.png)  
-<sup>*RGBQuant, CIEDE200, max 6 colors*</sup>
+<sup>*RGBQuant, CIEDE2000, max 6 colors*</sup>
 
 ![palette](./images/2020.05.01-11.44.48-neuquant-ciede2000-q6.png)  
-<sup>*NeuQuant, CIEDE200, max 6 colors*</sup>
+<sup>*NeuQuant, CIEDE2000, max 6 colors*</sup>
 
 See other outputs in the [./images](./images) direcotry.
 
